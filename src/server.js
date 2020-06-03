@@ -1,10 +1,13 @@
 const express = require('express');
+const api = require('./api/api');
 const db = require('./db');
 const DBManager = require('./db-manager');
-const sessionStore = {};
-const api = require('./api/api');
 // crea un servidor de express
 const app = express();
+// esto debería ser una base de datos (keystore)
+// en la que se guarde el token de sesion asociado al usuario
+const sessionStore = {};
+// crear una bd falsa para hacer pruebas
 const dbManager = new DBManager(db);
 // para la ruta /api utiliza el middleware api
 app.use('/api', api(dbManager, sessionStore));

@@ -1,4 +1,4 @@
 module.exports = [
-    require('./pizzas'),
+    require('./ping'),
     require('./users')
 ]
