@@ -10,6 +10,7 @@ const api = (dbManger, sessionStore) => {
     const router = express.Router();
     // permite interpretar application/json
     router.use(bodyParser.json());
+    router.use(bodyParser.urlencoded({extended: true}));
     // facilita el manejo de las cookies
     router.use(cookieParser());
     // middleware para securizar la api usando tokens de sesion
