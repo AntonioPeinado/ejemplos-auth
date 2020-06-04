@@ -1,14 +1,12 @@
 const uuid = require('uuid');
 const bcrypt = require('bcrypt');
-const saltRounds = 10;
 
 // cada controlador es responsable de registrarse en la api
-module.exports = (api, dbManager, sessionStore) => {
+module.exports = (api, dbManager, sessionManager) => {
     api.post('/users', async (req, res, next) => {
         // hashear la contrasena porque no podemos guardarlas en plano en la base
         // de datos. El salt es el nivel de encriptación.
-        // TODO: enterarnos bien de como narices funciona bcrypt
-        const password = await bcrypt.hash(req.body.password, saltRounds);
+        const password = await bcrypt.hash(req.body.password, 10);
         const user = {
             ...req.body,
             id: uuid.v4(),
@@ -19,12 +17,12 @@ module.exports = (api, dbManager, sessionStore) => {
         next();
     });
     api.post('/users/login', async (req, res, next) => {
-        const {email, password} = req.body;
+        const { email, password } = req.body;
         // buscamos el usuairo por email (tendría que ser único)
         const user = dbManager.find('users', (user) => user.email === email);
         // si no se encontró usuario con ese email devolvemos un 401
         // no devolvemos un 404 para no dar informacion sobre qué campo es erroneo.
-        if(!user){
+        if (!user) {
             res.status(401).end();
             next();
             return;
@@ -32,24 +30,48 @@ module.exports = (api, dbManager, sessionStore) => {
         // comparamos el hash generado por bcrypt con la contraseña introducida
         const isCorrectPassword = await bcrypt.compare(password, user.password);
         // si no coinciden las contraseñas 401
-        if(!isCorrectPassword){
+        if (!isCorrectPassword) {
             res.status(401).end();
             next();
             return;
         }
-        // si el login es correcto generamos un token aleatorio
-        const sessionToken = uuid.v4();
-        // guardamos en token en la base de datos de sesiones asociandolo al id de usuario
-        sessionStore[sessionToken] = user.id;
-        // incluimos el token en una cookie con caducidad, httpOnly, etc..
+        // antes de crear el nuevo token podríamos invalidar el anterior en función
+        // del id de usuario
+        const {authToken, refreshToken} = sessionManager.create(user.id);
         res
-            .cookie('session', sessionToken, {
-                maxAge: 1 * 60 * 60 * 1000,
+            .cookie('authToken', authToken, {
                 httpOnly: true,
+                sameSite: 'strict'
+            })
+            .cookie('refreshToken', refreshToken, {
+                httpOnly: true,
+                sameSite: 'strict'
+            })
+            .json(user)
+            .end();
+        next();
+    });
+    api.post('/users/logout', (req, res) => {
+        sessionManager.remove(req.cookies.authToken, req.cookies.refreshToken);
+        res.status(200).end();
+    });
+    api.post('/users/refresh', (req, res) => {
+        if(!sessionManager.canRefresh(req.cookies.refreshToken)){
+            res.status(401).end();
+            return;
+        }
+        const {authToken, refreshToken} = sessionManager.refresh(req.cookies.refreshToken);
+        sessionManager.remove(req.cookies.authToken, req.cookies.refreshToken);
+        res
+            .cookie('authToken', authToken, {
+                httpOnly: true,
+                sameSite: 'strict'
+            })
+            .cookie('refreshToken', refreshToken, {
+                httpOnly: true,
+                sameSite: 'strict'
             })
             .status(200)
             .end();
-            // TODO: redireccionar a la app
-        next();
     })
 }
