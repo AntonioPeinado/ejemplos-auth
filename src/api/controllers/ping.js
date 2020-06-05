@@ -4,4 +4,7 @@ module.exports = (api) => {
         res.status(200).send('pong');
         next();
     })
+    api.post('/ping', (req, res, next) => {
+        res.status(201).send(req.body).end();
+    })
 }

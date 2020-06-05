@@ -1,13 +1,4 @@
 module.exports = (dbManager, sessionManager) => (req, res, next) => {
-    // si el path es /users/login no comprobamos nada
-    const isLogin = req.path === '/users/login';
-    const isRegister = req.path === '/users' && req.method === 'POST';
-    const isRefresh = req.path === '/users/referesh';
-    if (isLogin || isRegister || isRefresh) {
-        next();
-        return;
-    }
-
     // no tiene cookie o no esta guardada
     if (!sessionManager.isAuthorized(req.cookies.authToken)) {
         res.status(401).end();
