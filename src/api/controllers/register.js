@@ -1,7 +1,7 @@
 const uuid = require('uuid');
 const bcrypt = require('bcrypt');
 
-module.exports = (api, dbManager) => {
+module.exports = (api) => {
     api.post('/register', async (req, res) => {
         // hashear la contrasena porque no podemos guardarlas en plano en la base
         // de datos. El salt es el nivel de encriptación.
@@ -11,7 +11,7 @@ module.exports = (api, dbManager) => {
             id: uuid.v4(),
             password
         }
-        dbManager.create('users', user);
+        req.$.dbManager.create('users', user);
         res.status(201).json(user);
     });
 }

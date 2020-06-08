@@ -12,7 +12,6 @@ module.exports = {
         refreshSecret: process.env.REFRESH_SECRET || 'refresh_secret',
         authTTL: THREE_MINUTES,
         refreshTTL: THIRTY_DAYS,
-        saldRounds: 10
     },
     referrerPolicy: 'strict-origin',
     csp: {

@@ -1,11 +1,9 @@
 const bcrypt = require('bcrypt');
-const jwt = require('../jwt');
-
-module.exports = (api, dbManager, config) => {
+module.exports = (api) => {
     api.post('/login', async (req, res) => {
         const { email, password } = req.body;
         // buscamos el usuairo por email (tendría que ser único)
-        const user = dbManager.find('users', (user) => user.email === email);
+        const user = req.$.dbManager.find('users', (user) => user.email === email);
         // si no se encontró usuario con ese email devolvemos un 401
         // no devolvemos un 404 para no dar informacion sobre qué campo es erroneo.
         if (!user) {
@@ -23,17 +21,10 @@ module.exports = (api, dbManager, config) => {
             ...user,
             password: undefined
         };
-        const authToken = await jwt.sign({user:userModel}, config.authentication.authSecret, {
-            algorithm: 'HS512',
-            expiresIn: config.authentication.authTTL
-        });
-        const refreshToken = await jwt.sign({user:userModel}, config.authentication.refreshSecret, {
-            algorithm: 'HS512',
-            expiresIn: config.authentication.refreshTTL
-        });
+        const {authToken, refreshToken} = await req.$.authManager.login(userModel);
         res.status(200)
             .cookie('refresh', refreshToken, {
-                maxAge: config.authentication.refreshTTL * 1000,
+                maxAge: req.$.config.authentication.refreshTTL * 1000,
                 httpOnly: true,
                 sameSite: 'none'
             })
