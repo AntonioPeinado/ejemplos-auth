@@ -1,6 +1,7 @@
 const bcrypt = require('bcrypt');
+const jwt = require('../jwt');
 
-module.exports = (api, dbManager, sessionManager) => {
+module.exports = (api, dbManager, config) => {
     api.post('/login', async (req, res) => {
         const { email, password } = req.body;
         // buscamos el usuairo por email (tendría que ser único)
@@ -18,13 +19,23 @@ module.exports = (api, dbManager, sessionManager) => {
             res.status(401).end();
             return;
         }
-        const { authToken, refreshToken } = sessionManager.create(user.id);
-        res.cookie('authToken', authToken, {
-            httpOnly: true,
-            // sameSite: 'strict'
-        }).cookie('refreshToken', refreshToken, {
-            httpOnly: true,
-            // sameSite: 'strict'
-        }).json(user);
+        const userModel = {
+            ...user,
+            password: undefined
+        };
+        const authToken = await jwt.sign({user:userModel}, config.authentication.authSecret, {
+            algorithm: 'HS512',
+            expiresIn: config.authentication.authTTL
+        });
+        const refreshToken = await jwt.sign({user:userModel}, config.authentication.refreshSecret, {
+            algorithm: 'HS512',
+            expiresIn: config.authentication.refreshTTL
+        });
+        res.status(200)
+            .cookie('refresh', refreshToken, {
+                maxAge: config.authentication.refreshTTL * 1000,
+                httpOnly: true
+            })
+            .json({authToken});
     });
 }

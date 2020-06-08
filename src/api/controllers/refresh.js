@@ -1,15 +1,22 @@
-module.exports = (api, dbManager, sessionManager) => {
-    api.post('/refresh', (req, res) => {
-        if (!sessionManager.canRefresh(req.cookies.refreshToken)) {
+const jwt = require('../jwt');
+
+module.exports = (api, dbManager, config) => {
+    api.post('/refresh', async (req, res) => {
+        const token = req.cookies.refresh;
+        if(!token){
             res.status(401).end();
             return;
         }
-        const { authToken, refreshToken } = sessionManager.refresh(req.cookies.refreshToken);
-        sessionManager.remove(req.cookies.authToken, req.cookies.refreshToken);
-        res.cookie('authToken', authToken, {
-            httpOnly: true,
-        }).cookie('refreshToken', refreshToken, {
-            httpOnly: true,
-        }).status(200).end();
+        try {
+            const payload = await jwt.verify(token, config.authentication.refreshSecret);
+            const authToken = await jwt.sign({user:payload.user}, config.authentication.authSecret, {
+                algorithm: 'HS512',
+                expiresIn: config.authentication.authTTL
+            });
+            res.status(200).json({token:authToken});
+        } catch (err){
+            res.status(401).end();
+            return;
+        }
     })
 }

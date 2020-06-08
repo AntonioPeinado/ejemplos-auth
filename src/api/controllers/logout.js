@@ -1,6 +1,5 @@
-module.exports = (api, dbManager, sessionManager) => {
+module.exports = (api) => {
     api.post('/logout', (req, res) => {
-        sessionManager.remove(req.cookies.authToken, req.cookies.refreshToken);
-        res.status(200).end();
+        res.clearCookie('refresh').status(204).end();
     });
 }
