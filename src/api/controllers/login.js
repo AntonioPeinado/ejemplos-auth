@@ -34,8 +34,9 @@ module.exports = (api, dbManager, config) => {
         res.status(200)
             .cookie('refresh', refreshToken, {
                 maxAge: config.authentication.refreshTTL * 1000,
-                httpOnly: true
+                httpOnly: true,
+                sameSite: 'none'
             })
-            .json({authToken});
+            .json({token: authToken});
     });
 }

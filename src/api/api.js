@@ -15,14 +15,14 @@ function api(config) {
     // mas remedio que cancelarlas
     router.use(corsGate.originFallbackToReferrer());
     router.use(cors({
-        origin: true, //config.allowedOrigins,
+        origin: config.allowedOrigins,
         credentials: true
     }));
-    // router.use(corsGate({
-    //     strict: true,
-    //     allowSafe: false,
-    //     origin: util.getOrigin(config)
-    // }));
+    router.use(corsGate({
+        strict: true,
+        allowSafe: false,
+        origin: util.getOrigin(config)
+    }));
 
     controllers.public.forEach((controller) => {
         controller(router, dbManager, config);

@@ -7,6 +7,7 @@ module.exports = (api, dbManager, config) => {
             res.status(401).end();
             return;
         }
+        // comprobar si el token esta en nuestra lista de tokens invalidos
         try {
             const payload = await jwt.verify(token, config.authentication.refreshSecret);
             const authToken = await jwt.sign({user:payload.user}, config.authentication.authSecret, {
